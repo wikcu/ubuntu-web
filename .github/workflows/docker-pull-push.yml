@@ -44,11 +44,11 @@ jobs:
 
       -
         name: Pull Image
-        run: docker pull --platform ${{ matrix.platform }} dehim/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}
+        run: docker pull --platform ${{ matrix.platform }} ${{ env.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}
 
       -
         name: Tag Image
-        run: docker tag dehim/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-${{ env.PLATFORM_SUFFIX }}
+        run: docker tag ${{ env.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-${{ env.PLATFORM_SUFFIX }}
 
       -
         name: Push Image
