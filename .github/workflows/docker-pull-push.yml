@@ -16,11 +16,16 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
 
-      - 
-        name: Set Tag Name
-        id: tag_name
-        run: echo "::set-output name=tag::$(echo ${GITHUB_REF#refs/tags/})"
+      # - 
+      #   name: Set Tag Name
+      #   id: tag_name
+      #   run: echo "::set-output name=tag::$(echo ${GITHUB_REF#refs/tags/})"
+      #   shell: bash
+
+      - name: Set Tag Name
+        run: echo "tag=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_ENV
         shell: bash
+
 
       - 
         name: Project Name to Lowercase
