@@ -58,7 +58,7 @@ jobs:
           mkdir -p /tmp/digests
           digest_full=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }})
           digest=${digest_full##*@sha256:}
-          touch "/tmp/digests/${digest#sha256:}"
+          touch "/tmp/digests/$digest"
 
       -
         name: Upload digest
