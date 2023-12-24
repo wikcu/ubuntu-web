@@ -62,7 +62,7 @@ jobs:
           echo "digest=$digest" >> $GITHUB_ENV
 
 
- create-manifest:
+  create-manifest:
     runs-on: ubuntu-latest
     needs: pull-and-push
     steps:
