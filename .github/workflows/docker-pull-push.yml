@@ -32,6 +32,16 @@ jobs:
         name: Set Project Name
         run: echo "PROJECT_NAME=$(basename ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
+
+      - 
+        name: Set Platform Suffix
+        run: |
+          if [[ ${{ matrix.platform }} == "linux/amd64" ]]; then
+            echo "PLATFORM_SUFFIX=amd64" >> $GITHUB_ENV
+          elif [[ ${{ matrix.platform }} == "linux/arm64" ]]; then
+            echo "PLATFORM_SUFFIX=arm64" >> $GITHUB_ENV
+          fi
+
       - 
         name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -39,13 +49,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # -
+      #   name: Pull Images
+      #   run: |
+      #     for platform in ${{ toJson(matrix.platform) }}; do
+      #       docker pull --platform $platform ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}
+      #       docker tag ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}-${platform//\//_}
+      #     done
+
       -
         name: Pull Images
         run: |
-          for platform in ${{ toJson(matrix.platform) }}; do
-            docker pull --platform $platform ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}
-            docker tag ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}-${platform//\//_}
-          done
+          docker pull --platform ${{ matrix.platform }} ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}
+          platform_suffix=$(echo ${{ matrix.platform }} | sed 's/\//-/g')
+          docker tag ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}-${platform_suffix}
+
+
 
       -
         name: Create and Push Manifest List
