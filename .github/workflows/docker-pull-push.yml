@@ -1,4 +1,4 @@
-name: Pull and Push Docker Image
+name: Pull, Create and Push Docker Manifest
 
 on:
   push:
@@ -6,71 +6,21 @@ on:
       - '*'
 
 jobs:
-  pull-and-push:
+  create-and-push-manifest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: [linux/amd64, linux/arm64]
+        platform:
+          - linux/amd64
+          - linux/arm64
     steps:
       - 
         name: Checkout
         uses: actions/checkout@v3
 
-      - 
-        name: Set Tag Name
-        id: tag_name
-        run: echo "::set-output name=tag::$(echo ${GITHUB_REF#refs/tags/})"
-        shell: bash
-
-      # - name: Set Tag Name
-      #   run: echo "tag=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_ENV
-      #   shell: bash
-
-
-      - 
-        name: Project Name to Lowercase
-        run: echo "PROJECT_NAME=$(basename ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      - 
-        name: Set Platform Suffix
-        run: |
-          if [[ ${{ matrix.platform }} == "linux/amd64" ]]; then
-            echo "PLATFORM_SUFFIX=amd64" >> $GITHUB_ENV
-          elif [[ ${{ matrix.platform }} == "linux/arm64" ]]; then
-            echo "PLATFORM_SUFFIX=arm64" >> $GITHUB_ENV
-          fi
-
-      - 
-        name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      -
-        name: Pull Image
-        run: docker pull --platform ${{ matrix.platform }} ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}
-
-      -
-        name: Tag Image
-        run: docker tag ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-${{ env.PLATFORM_SUFFIX }}
-
-      -
-        name: Push Image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-${{ env.PLATFORM_SUFFIX }}
-
-      -
-        name: Export Digest
-        id: export_digest
-        run: |
-          digest=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-${{ env.PLATFORM_SUFFIX }})
-          echo "digest=$digest" >> $GITHUB_ENV
-
-
-  create-manifest:
-    runs-on: ubuntu-latest
-    needs: pull-and-push
-    steps:
+      # - 
+      #   name: Set Tag Name
+      #   run: echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_ENV
 
       - 
         name: Set Tag Name
@@ -79,7 +29,7 @@ jobs:
         shell: bash
 
       - 
-        name: Project Name to Lowercase
+        name: Set Project Name
         run: echo "PROJECT_NAME=$(basename ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - 
@@ -88,11 +38,18 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      -
+        name: Pull Images
+        run: |
+          for platform in ${{ toJson(matrix.platform) }}; do
+            docker pull --platform $platform ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}
+            docker tag ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}-${platform//\//_}
+          done
 
       -
         name: Create and Push Manifest List
         run: |
-          docker manifest create ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }} \
-              --amend ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-amd64 \
-              --amend ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-arm64
-          docker manifest push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}
+          docker manifest create ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }} \
+            $(printf "${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}-%s " "${matrix.platform[@]//\//_}")
+          docker manifest push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}
