@@ -27,6 +27,15 @@ jobs:
         run: echo "PROJECT_NAME=$(basename ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - 
+        name: Set Platform Suffix
+        run: |
+          if [[ ${{ matrix.platform }} == "linux/amd64" ]]; then
+            echo "PLATFORM_SUFFIX=amd64" >> $GITHUB_ENV
+          elif [[ ${{ matrix.platform }} == "linux/arm64" ]]; then
+            echo "PLATFORM_SUFFIX=arm64" >> $GITHUB_ENV
+          fi
+
+      - 
         name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
@@ -39,8 +48,8 @@ jobs:
 
       -
         name: Tag Image
-        run: docker tag dehim/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }} ${YOUR_DOCKERHUB_USERNAME}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-${{ matrix.platform }}
+        run: docker tag dehim/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-${{ env.PLATFORM_SUFFIX }}
 
       -
         name: Push Image
-        run: docker push ${YOUR_DOCKERHUB_USERNAME}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-${{ matrix.platform }}
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ steps.tag_name.outputs.tag }}-${{ env.PLATFORM_SUFFIX }}
