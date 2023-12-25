@@ -3,7 +3,7 @@ name: Pull and Push Docker Image
 on:
   push:
     tags:
-      - '*'
+      - '*.*'
 
 jobs:
   pull-and-upload-digest:
