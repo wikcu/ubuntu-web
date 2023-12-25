@@ -16,12 +16,6 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
 
-      # - 
-      #   name: Set Tag Name
-      #   id: tag_name
-      #   run: echo "::set-output name=tag::$(echo ${GITHUB_REF#refs/tags/})"
-      #   shell: bash
-
       - name: Set Tag Name
         run: echo "tag=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_ENV
         shell: bash
@@ -31,14 +25,14 @@ jobs:
         name: Project Name to Lowercase
         run: echo "PROJECT_NAME=$(basename ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - 
-        name: Set Platform Suffix
-        run: |
-          if [[ ${{ matrix.platform }} == "linux/amd64" ]]; then
-            echo "PLATFORM_SUFFIX=amd64" >> $GITHUB_ENV
-          elif [[ ${{ matrix.platform }} == "linux/arm64" ]]; then
-            echo "PLATFORM_SUFFIX=arm64" >> $GITHUB_ENV
-          fi
+      # - 
+      #   name: Set Platform Suffix
+      #   run: |
+      #     if [[ ${{ matrix.platform }} == "linux/amd64" ]]; then
+      #       echo "PLATFORM_SUFFIX=amd64" >> $GITHUB_ENV
+      #     elif [[ ${{ matrix.platform }} == "linux/arm64" ]]; then
+      #       echo "PLATFORM_SUFFIX=arm64" >> $GITHUB_ENV
+      #     fi
 
       - 
         name: Login to Docker Hub
