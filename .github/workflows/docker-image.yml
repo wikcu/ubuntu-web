@@ -52,7 +52,7 @@ jobs:
           mkdir -p /tmp/digests
           digest_full=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.tag }})
           digest=${digest_full##*@sha256:}
-          echo "Digest: $digest"
+          echo "${{ matrix.platform }} - Digest: $digest"
           touch "/tmp/digests/$digest"
 
       -
