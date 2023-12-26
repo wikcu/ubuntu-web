@@ -49,17 +49,17 @@ jobs:
       - name: Get Image Digest
         id: get_digest
         run: |
-          mkdir -p /tmp/digests
+          mkdir -p /tmp/digests/${{ env.tag }}
           digest_full=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.DOCKERHUB_SOURCE }}/${{ env.PROJECT_NAME }}:${{ env.tag }})
           digest=${digest_full##*@sha256:}
-          touch "/tmp/digests/$digest"
+          touch "/tmp/digests/${{ env.tag }}/$digest"
 
       -
         name: Upload digest
         uses: actions/upload-artifact@v3
         with:
           name: digests
-          path: /tmp/digests/*
+          path: /tmp/digests/${{ env.tag }}/*
           if-no-files-found: error
           retention-days: 1
 
@@ -84,6 +84,11 @@ jobs:
     needs:
       - pull-and-upload-digest
     steps:
+
+      - name: Set Tag Name
+        run: echo "tag=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_ENV
+        shell: bash
+        
       -
         name: Owner names
         run: |
@@ -100,7 +105,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: digests
-          path: /tmp/digests
+          path: /tmp/digests/${{ env.tag }}
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
